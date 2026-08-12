@@ -11,9 +11,8 @@
 
 A high-throughput, pipelined **AES-128 CTR-mode cryptographic processor** developed at RTL, verified using **UVM**, prototyped on the **AMD Kria KV260 FPGA**, and physically implemented using an open-source **SkyWater 130 nm ASIC flow**.
 
-> **Visual note:** The figures in this README are exported directly from the supplied project presentation, preserving the project's original diagrams, result tables, FPGA screenshots, verification architecture, and ASIC layout visuals.
 
----
+
 
 ## Table of Contents
 
@@ -208,20 +207,7 @@ AddRoundKey
 | AddRoundKey | Bitwise XOR |
 | Key Expansion | Pre-calculated round keys |
 
-## S-Box Optimization
 
-![S-Box Optimization](docs/images/s-box-optimization.png)
-
-*Figure: S-Box implementation options from the project presentation.*
-
-The design evaluates LUT-based and GF-arithmetic S-Box implementations and supports selection through a synthesis parameter.
-
-| Metric | LUT | GF Arithmetic |
-|---|---:|---:|
-| LUTs | 8,412 | 12,477 |
-| Frequency | 232.56 MHz | 166.67 MHz |
-| Clock | 4.30 ns | 6.00 ns |
-| Power | 1.00 W | 3.17 W |
 
 ## Key Expansion
 
@@ -359,17 +345,7 @@ The documented system uses AXI Lite control, AXI Stream data, DMA transfer, and 
 | Post-Implementation P&R | 179.86 MHz | 23.02 Gbps | 2,877 MB/s |
 | Active Operational Standard | 100.00 MHz | 12.80 Gbps | 1,600 MB/s |
 
-### KV260 Execution
 
-| Metric | Baremetal (JTAG) | Linux (PetaLinux) |
-|---|---:|---:|
-| Correctness | 5/5 PASSED | 5/5 PASSED |
-| Single-block latency | 490 ns (49 cycles @ 99 MHz) | 530 ns |
-| Throughput, 1000 blocks | 13 Mbps | 100.29 Mbps |
-| Blocks/sec | 103,412 | 783,479 |
-| Bitstream load time | N/A | 133 ms |
-
----
 
 # ASIC Implementation
 
