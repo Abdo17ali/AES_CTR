@@ -9,64 +9,28 @@
 
 > **End-to-End Design, Verification, and Hardware Implementation of an AES Cryptographic Processor Across FPGA and ASIC Platforms**
 
-A high-throughput, deeply pipelined **AES-128 CTR-mode cryptographic processor** developed at RTL, functionally verified using **UVM**, prototyped on the **AMD Kria KV260 FPGA**, and physically implemented using an open-source **SkyWater 130 nm ASIC flow**.
+A high-throughput, pipelined **AES-128 CTR-mode cryptographic processor** developed at RTL, verified using **UVM**, prototyped on the **AMD Kria KV260 FPGA**, and physically implemented using an open-source **SkyWater 130 nm ASIC flow**.
 
-The project combines cryptographic hardware design, high-throughput pipelining, hardware security monitoring, FPGA hardware/software co-design, and ASIC physical implementation into a complete end-to-end digital IC design flow.
+> **Visual note:** The figures in this README are exported directly from the supplied project presentation, preserving the project's original diagrams, result tables, FPGA screenshots, verification architecture, and ASIC layout visuals.
 
 ---
 
 ## Table of Contents
 
-* [Overview](#overview)
-
-  * [What is AES-CTR?](#what-is-aes-ctr)
-  * [What Does This Project Do?](#what-does-this-project-do)
-  * [Why is Hardware AES-CTR Important?](#why-is-hardware-aes-ctr-important)
-* [Architecture & Block Diagram](#architecture--block-diagram)
-
-  * [Overall Architecture](#overall-architecture)
-  * [CTR Processing Flow](#ctr-processing-flow)
-  * [High-Throughput Pipeline](#high-throughput-pipeline)
-  * [FPGA System Architecture](#fpga-system-architecture)
-* [Features](#features)
-* [Project Structure](#project-structure)
-* [RTL Design Details](#rtl-design-details)
-
-  * [AES-128 Core](#aes-128-core)
-  * [Pipeline Architecture](#pipeline-architecture)
-  * [S-Box Architecture](#s-box-architecture)
-  * [Key Expansion](#key-expansion)
-  * [CTR Mode](#ctr-mode)
-  * [Security Monitor](#security-monitor)
-  * [AXI Interface](#axi-interface)
-* [Verification & Simulation](#verification--simulation)
-
-  * [UVM Verification Architecture](#uvm-verification-architecture)
-  * [Verification Strategy](#verification-strategy)
-  * [Test Cases](#test-cases)
-  * [Verification Results](#verification-results)
-* [FPGA Implementation](#fpga-implementation)
-
-  * [Target Platform](#target-platform)
-  * [Hardware/Software Co-Design](#hardwaresoftware-co-design)
-  * [Resource Utilization](#resource-utilization)
-  * [Timing Results](#timing-results)
-  * [Performance Results](#performance-results)
-* [ASIC Implementation](#asic-implementation)
-
-  * [Technology](#technology)
-  * [ASIC Flow](#asic-flow)
-  * [Physical Implementation Results](#physical-implementation-results)
-* [Tools Used](#tools-used)
-* [How To Run](#how-to-run)
-
-  * [Simulation](#simulation)
-  * [FPGA Implementation](#fpga-implementation-steps)
-  * [ASIC Flow](#asic-flow-steps)
-* [Results Summary](#results-summary)
-* [References](#references)
-* [Author & Contact](#author--contact)
-* [License](#license)
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [RTL Design](#rtl-design)
+- [Verification & Simulation](#verification--simulation)
+- [FPGA Implementation](#fpga-implementation)
+- [ASIC Implementation](#asic-implementation)
+- [Tools Used](#tools-used)
+- [How To Run](#how-to-run)
+- [Results Summary](#results-summary)
+- [References](#references)
+- [Author & Contact](#author--contact)
+- [License](#license)
 
 ---
 
@@ -74,263 +38,154 @@ The project combines cryptographic hardware design, high-throughput pipelining, 
 
 ## What is AES-CTR?
 
-**AES-CTR (Counter Mode)** is a block-cipher mode in which AES is used to encrypt a sequence of counter values rather than directly encrypting the plaintext.
-
-For each block:
+AES-CTR (Counter Mode) uses AES to encrypt successive counter values and generates a keystream. The keystream is XORed with the input data:
 
 ```text
 Keystream_i = AES_K(Counter_i)
-
 Ciphertext_i = Plaintext_i XOR Keystream_i
 ```
 
-Decryption uses the same operation:
+The same AES encryption operation is used for decryption:
 
 ```text
 Plaintext_i = Ciphertext_i XOR AES_K(Counter_i)
 ```
 
-The counter is incremented for every processed block.
-
-This gives CTR mode stream-cipher-like behavior while retaining AES as the underlying cryptographic primitive.
-
----
+The counter is incremented automatically for each processed block.
 
 ## What Does This Project Do?
 
-This project implements a **high-throughput pipelined AES-128 CTR cryptographic processor** and takes the design through multiple stages of the digital IC development flow:
+The project develops a high-throughput AES hardware accelerator through an end-to-end digital IC design flow:
 
 ```text
-Cryptographic Specification
-          │
-          ▼
-      RTL Design
-          │
-          ▼
-     UVM Verification
-          │
-          ▼
-     FPGA Prototyping
-          │
-          ▼
- Hardware/Software Co-Design
-          │
-          ▼
-   ASIC Synthesis & P&R
-          │
-          ▼
- SKY130 Physical Implementation
+Specification
+    ↓
+RTL Architecture
+    ↓
+UVM Verification
+    ↓
+FPGA Prototyping
+    ↓
+Hardware/Software Co-Design
+    ↓
+ASIC Synthesis & Physical Design
+    ↓
+SKY130 Layout & Physical Verification
 ```
 
-The project evolved from a pipelined AES-128 encryption core into a complete CTR-mode cryptographic processor.
+The supplied presentation first documents a pipelined AES-128 ECB core as the foundation for the subsequent CTR implementation, including pipeline optimization, S-Box selection, key-expansion optimization, FPGA integration, and performance evaluation.
 
-The presentation also documents an **AES-128 ECB core** as the foundation for the subsequent CTR implementation. The ECB implementation was used to investigate pipeline architecture, S-Box optimization, key expansion, and FPGA performance before extending the architecture to CTR mode.
+## Why Hardware AES-CTR?
 
----
-
-## Why is Hardware AES-CTR Important?
-
-Hardware implementation provides several advantages for cryptographic acceleration:
-
-* High throughput
-* Deterministic latency
-* Hardware acceleration
-* Efficient FPGA implementation
-* Potential ASIC deployment
-* Dedicated security monitoring
-* Hardware/software co-design
-* Reduced dependency on software-only cryptographic processing
-
-The project specifically targets high-throughput applications where cryptographic processing can become a system bottleneck.
+Hardware AES provides dedicated cryptographic acceleration with deterministic processing, high throughput, hardware-level monitoring, FPGA prototyping capability, and a path toward ASIC implementation.
 
 ---
 
-# Architecture & Block Diagram
+# Architecture
 
-## Overall Architecture
+## AES-CTR Architecture
 
-The main AES-CTR architecture consists of five major functional blocks:
+![Overall AES-CTR Architecture](docs/images/aes-ctr-architecture.png)
 
-```text
-                         ┌───────────────────────┐
-                         │      Input Data       │
-                         │   Plaintext / Data    │
-                         └───────────┬───────────┘
-                                     │
-                                     ▼
-                         ┌───────────────────────┐
-                         │ Counter Block         │
-                         │ Generator             │
-                         │                       │
-                         │ IV + Counter          │
-                         │ Auto Increment        │
-                         └───────────┬───────────┘
-                                     │
-                                     ▼
-                  ┌─────────────────────────────────────┐
-                  │          AES-128 Pipeline            │
-                  │                                     │
-                  │ Stage 1 → Stage 2 → ... → Stage 5 │
-                  │                                     │
-                  │ Dual-Round Implementation           │
-                  └───────────┬─────────────────────────┘
-                              │
-                              │ AES(Counter)
-                              ▼
-                    ┌─────────────────────┐
-                    │     Delay Line      │
-                    │                     │
-                    │ Align plaintext /   │
-                    │ data with keystream │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │      XOR Unit       │
-                    │                     │
-                    │ Data XOR Keystream  │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   Output Ciphertext │
-                    └─────────────────────┘
+*Figure: Overall AES-CTR architecture exported directly from the project presentation.*
 
-                         ┌─────────────────────┐
-                         │   Security Monitor  │
-                         │                     │
-                         │ Nonce Reuse         │
-                         │ Counter Overflow    │
-                         │ Counter Exhaustion  │
-                         │ Reset Attack        │
-                         └─────────────────────┘
-```
+The architecture contains the **Counter Block Generator**, **AES Pipeline**, **Delay Line**, **XOR Unit**, and **Security Monitor**.
 
----
+## Five-Stage Pipeline
+
+![5-Stage Pipeline Optimization](docs/images/5-stage-pipeline-optimization.png)
+
+*Figure: Five-stage pipeline optimization from the project presentation.*
+
+The reported architecture uses a five-stage pipeline and dual-round implementation. The CTR presentation reports an eight-cycle pipeline latency and one block per clock cycle.
 
 ## CTR Processing Flow
 
-The CTR datapath follows the sequence documented in the project presentation:
+![CTR Processing Flow](docs/images/ctr-processing-flow.png)
 
-```text
-IV loaded once
-     │
-     ▼
-Counter increments automatically
-     │
-     ▼
-AES encrypts counter
-     │
-     ▼
-AES keystream generated
-     │
-     ▼
-Keystream aligned through delay line
-     │
-     ▼
-Plaintext XOR Keystream
-     │
-     ▼
-Ciphertext
-```
+*Figure: CTR processing flow from the project presentation.*
 
-The same AES encryption core is used for encryption and decryption because CTR mode relies on XORing the data with the generated keystream.
+The documented flow is:
 
----
-
-## High-Throughput Pipeline
-
-The AES engine uses a **five-stage pipeline** with a dual-round implementation.
-
-Key architectural characteristics:
-
-| Parameter            |                      Design |
-| -------------------- | --------------------------: |
-| Pipeline depth       |                    5 stages |
-| AES pipeline latency |              8 clock cycles |
-| Blocks processed     |       1 block / clock cycle |
-| Round implementation |                  Dual-round |
-| Key expansion        |              Pre-calculated |
-| CTR operation        | Automatic counter increment |
-
-The architecture is designed to maintain continuous pipeline utilization and maximize throughput.
+1. IV is loaded once.
+2. Counter increments automatically.
+3. AES encrypts the counter.
+4. The generated keystream is combined with the input through XOR.
+5. The resulting data is produced at the output.
 
 ---
 
 # Features
 
-## Cryptographic Features
+### Cryptographic
 
-* AES-128 encryption core
-* AES-128 CTR mode
-* Stream-cipher-like operation
-* Encryption and decryption using the same AES datapath
-* Automatic counter increment
-* IV-based counter initialization
-* NIST/FIPS test-vector verification
+- AES-128 encryption core
+- AES-128 CTR mode
+- Stream-cipher-like behavior
+- Same AES datapath for encryption and decryption
+- Automatic counter increment
+- NIST/FIPS test-vector verification
 
-## High-Performance Architecture
+### High Throughput
 
-* Five-stage AES pipeline
-* Dual-round implementation
-* One block per clock cycle
-* Eight-cycle pipeline latency
-* Pre-calculated round keys
-* Optimized S-Box implementation
-* Parameterized LUT/GF S-Box architecture
+- Five-stage pipeline
+- Dual-round implementation
+- One block every clock cycle
+- Eight-cycle CTR pipeline latency
+- Pre-calculated round keys
+- LUT/GF S-Box selection
 
-## Security Monitoring
+### Security Monitoring
 
-The CTR implementation includes hardware-level security monitoring for:
+![Hardware Security Features](docs/images/security-features.png)
 
-* Nonce reuse detection
-* Counter overflow detection
-* Counter exhaustion warning
-* Reset attack detection
-* Error classification
-* Critical-error handling
-* Warning-error recovery through `error_clear`
+*Figure: Hardware security features documented in the presentation.*
 
-## FPGA Features
+- Nonce reuse detection
+- Counter overflow detection
+- Counter exhaustion warning
+- Reset attack detection
+- Error classification
+- Warning and critical error handling
 
-* AMD Kria KV260 target
-* ARM + FPGA SoC architecture
-* AXI Lite control interface
-* AXI Stream data interface
-* DMA-based data movement
-* FIFO buffering
-* Endian conversion
-* Linux/PetaLinux software control
-* Custom Vivado IP packaging
+### FPGA
 
-## Verification Features
+- AMD Kria KV260
+- ARM + FPGA SoC
+- AXI Lite control
+- AXI Stream data
+- DMA transfer
+- FIFO buffering
+- Endian conversion
+- Linux/PetaLinux software control
+- Custom Vivado IP
 
-* UVM-based verification environment
-* Self-checking scoreboard
-* Golden AES reference model
-* NIST SP 800-38A test vectors
-* Constrained-random verification
-* Security-oriented test cases
-* Error recovery testing
-* Pipeline latency verification
-* Functional coverage tracking
+### Verification
 
-## ASIC Features
+- UVM verification environment
+- Self-checking scoreboard
+- Golden AES reference model
+- NIST SP 800-38A vectors
+- Constrained-random testing
+- Security-oriented verification
+- Error-recovery testing
+- Constant pipeline-latency checking
 
-* SkyWater 130 nm technology
-* Open-source physical implementation flow
-* Multi-corner timing analysis
-* DRC verification
-* LVS verification
-* IR-drop analysis
-* Final physical layout
-* Zero unrouted nets
+### ASIC
+
+- SkyWater 130 nm technology
+- Open-source physical implementation flow
+- Multi-corner timing analysis
+- DRC
+- LVS
+- IR-drop analysis
+- Final physical layout
 
 ---
 
 # Project Structure
 
-The presentation does not specify the exact GitHub repository directory names. Therefore, the following is a **recommended repository organization** reflecting the design stages documented in the project.
+The presentation does not specify the exact GitHub directory names. The following structure is therefore a recommended organization matching the documented project stages:
 
 ```text
 AES-CTR-Cryptographic-Processor/
@@ -355,9 +210,6 @@ AES-CTR-Cryptographic-Processor/
 │   │   └── xor_unit.v
 │   │
 │   ├── security/
-│   │   ├── nonce_reuse_detector.v
-│   │   ├── counter_exhaustion.v
-│   │   ├── counter_overflow.v
 │   │   └── security_monitor.v
 │   │
 │   └── interfaces/
@@ -365,15 +217,13 @@ AES-CTR-Cryptographic-Processor/
 │       └── axi_stream_interface.v
 │
 ├── tb/
-│   ├── uvm/
-│   │   ├── agent/
-│   │   ├── driver/
-│   │   ├── monitor/
-│   │   ├── scoreboard/
-│   │   ├── sequences/
-│   │   └── tests/
-│   │
-│   └── reference_model/
+│   └── uvm/
+│       ├── agent/
+│       ├── driver/
+│       ├── monitor/
+│       ├── scoreboard/
+│       ├── sequences/
+│       └── tests/
 │
 ├── fpga/
 │   ├── vivado/
@@ -391,10 +241,7 @@ AES-CTR-Cryptographic-Processor/
 │   └── physical_verification/
 │
 ├── docs/
-│   ├── architecture/
-│   ├── verification/
-│   ├── fpga/
-│   └── asic/
+│   └── images/
 │
 └── results/
     ├── simulation/
@@ -402,212 +249,81 @@ AES-CTR-Cryptographic-Processor/
     └── asic/
 ```
 
-> **Note:** This is a logical repository structure rather than a claim about the exact directory names in the original project files.
+The `docs/images/` folder in this package contains the presentation-derived visuals used by this README.
 
 ---
 
-# RTL Design Details
+# RTL Design
 
-## AES-128 Core
+## AES Transformations
 
-The AES datapath implements the standard AES transformation sequence:
+The AES datapath uses the standard AES transformations:
 
 ```text
 SubBytes
-    │
-    ▼
+   ↓
 ShiftRows
-    │
-    ▼
+   ↓
 MixColumns
-    │
-    ▼
+   ↓
 AddRoundKey
 ```
 
-The project uses an optimized pipelined architecture to increase throughput.
+| Transformation | Documented Implementation |
+|---|---|
+| SubBytes | Optimized S-Box |
+| ShiftRows | Hard-wired byte permutation |
+| MixColumns | GF(2⁸) matrix multiplication using XOR trees |
+| AddRoundKey | Bitwise XOR |
+| Key Expansion | Pre-calculated round keys |
 
-### AES transformations
+## S-Box Optimization
 
-| Transformation | Hardware Implementation                      |
-| -------------- | -------------------------------------------- |
-| SubBytes       | Optimized S-Box                              |
-| ShiftRows      | Hard-wired byte permutation                  |
-| MixColumns     | GF(2⁸) matrix multiplication using XOR trees |
-| AddRoundKey    | Bitwise XOR                                  |
-| Key Expansion  | Pre-calculated round keys                    |
+![S-Box Optimization](docs/images/s-box-optimization.png)
 
----
+*Figure: S-Box implementation options from the project presentation.*
 
-## Pipeline Architecture
+The design evaluates LUT-based and GF-arithmetic S-Box implementations and supports selection through a synthesis parameter.
 
-The project compares a conventional sequential AES architecture with the proposed pipelined implementation.
-
-| Conventional AES         | Proposed Architecture     |
-| ------------------------ | ------------------------- |
-| Sequential               | 5-stage pipeline          |
-| Lower throughput         | Higher throughput         |
-| Basic architecture       | Optimized architecture    |
-| Single-round progression | Dual-round implementation |
-
-The pipeline is designed so that multiple blocks can be simultaneously present in different stages.
-
-The presentation reports:
-
-* **Five pipeline stages**
-* **One block every clock cycle**
-* **Eight-cycle latency for the CTR pipeline**
-* **Dual-round implementation**
-
----
-
-## S-Box Architecture
-
-Two S-Box implementation approaches were investigated:
-
-1. LUT-based implementation
-2. GF arithmetic implementation
-
-### Standalone S-Box comparison
-
-| Metric       |  LUT-Based | GF Arithmetic |
-| ------------ | ---------: | ------------: |
-| LUTs         |      8,412 |        12,477 |
-| Frequency    | 232.56 MHz |    166.67 MHz |
-| Clock period |    4.30 ns |       6.00 ns |
-| Power        |     1.00 W |        3.17 W |
-
-The LUT-based implementation provides higher frequency and throughput with fewer LUT resources in the reported standalone comparison.
-
-The RTL architecture also supports selecting between LUT and GF arithmetic through a synthesis parameter.
-
----
+| Metric | LUT | GF Arithmetic |
+|---|---:|---:|
+| LUTs | 8,412 | 12,477 |
+| Frequency | 232.56 MHz | 166.67 MHz |
+| Clock | 4.30 ns | 6.00 ns |
+| Power | 1.00 W | 3.17 W |
 
 ## Key Expansion
 
-The project uses **pre-calculated round keys** for high-throughput operation.
+![Key Expansion Optimization](docs/images/key-expansion-optimization.png)
 
-The presentation compares:
+*Figure: Key-expansion optimization from the project presentation.*
 
-| Feature              | On-the-Fly        | Pre-calculated    |
-| -------------------- | ----------------- | ----------------- |
-| Key generation       | During encryption | Before encryption |
-| Encryption latency   | Higher            | Lower             |
-| Throughput           | Lower             | Higher            |
-| Hardware complexity  | Lower             | Higher            |
-| Register usage       | Lower             | Higher            |
-| Pipeline suitability | Limited           | Excellent         |
+The design uses pre-calculated round keys for high-throughput operation. The presentation documents support for AES-128/AES-192/AES-256 and two round keys per clock.
 
-The design specifically uses pre-calculated keys to keep the five-stage pipeline fully utilized.
+| Feature | On-the-Fly | Pre-calculated |
+|---|---|---|
+| Key generation | During encryption | Before encryption |
+| Encryption latency | Higher | Lower |
+| Throughput | Lower | Higher |
+| Hardware complexity | Lower | Higher |
+| Register usage | Lower | Higher |
+| Pipeline suitability | Limited | Excellent |
 
-The presentation also documents:
-
-* Support for AES-128
-* AES-192
-* AES-256
-* Two round keys per clock
-* Pre-calculated key expansion
-
----
-
-# CTR Mode Architecture
-
-The CTR implementation extends the AES encryption core with a counter-generation and data-combination datapath.
+## CTR Datapath
 
 ```text
-              IV
-              │
-              ▼
-       ┌───────────────┐
-       │ Counter       │
-       │ Generator     │
-       └───────┬───────┘
-               │
-               ▼
-       ┌───────────────┐
-       │ AES Pipeline  │
-       └───────┬───────┘
-               │
-               ▼
-        AES Keystream
-               │
-               ▼
-       ┌───────────────┐
-Data ─►│ XOR           │──► Output
-       └───────────────┘
+          IV
+          ↓
+   Counter Generator
+          ↓
+      AES Pipeline
+          ↓
+      Keystream
+          ↓
+Data → XOR Unit → Output
 ```
 
-The IV is loaded once for an active session, after which the counter is automatically incremented for each block.
-
----
-
-# Security Monitor
-
-The CTR engine includes dedicated hardware security monitoring.
-
-## Nonce Reuse Detection
-
-The verification plan checks that:
-
-* The IV is accepted only once per active session.
-* Attempting to load a different IV while locked triggers `ERR_NONCE_REUSE`.
-
-This is particularly important for CTR mode because reuse of a nonce/counter sequence with the same key can expose relationships between plaintexts.
-
-## Counter Exhaustion
-
-The design generates a warning when the counter reaches the documented threshold:
-
-```text
-0xFFFFF000
-```
-
-## Counter Overflow
-
-The counter reaches its maximum value at:
-
-```text
-0xFFFFFFFF
-```
-
-Overflow triggers a critical halt condition.
-
-## Error Handling
-
-The design distinguishes between warning-level and critical errors:
-
-```text
-Warning Error
-     │
-     ├── error_clear
-     │
-     └── Recovery
-
-Critical Error
-     │
-     └── Full Reset Required
-```
-
----
-
-# AXI Interface
-
-The FPGA implementation wraps the AES accelerator using an **AXI Lite interface** for software control.
-
-The presentation identifies the following FPGA system interfaces:
-
-* AXI Lite Control
-* AXI Stream Data
-* DMA Transfer
-* Linux Application
-
-The AXI wrapper:
-
-* Converts the standalone RTL into reusable IP.
-* Provides memory-mapped software control.
-* Enables communication with the Zynq-based processing system.
-* Simplifies integration through Vivado IP Integrator.
-* Allows the AES accelerator to be reused in future FPGA projects.
+The counter is generated independently from the data path and the keystream is aligned with the data through the documented delay-line mechanism.
 
 ---
 
@@ -615,124 +331,51 @@ The AXI wrapper:
 
 ## UVM Verification Architecture
 
-The project uses **Universal Verification Methodology (UVM)** for scalable and reusable verification.
+![UVM Testbench Architecture](docs/images/uvm-testbench-architecture.png)
 
-The verification environment contains the following conceptual components:
+*Figure: UVM testbench architecture exported from the presentation.*
 
-```text
-                 ┌─────────────────────┐
-                 │       UVM Test      │
-                 └──────────┬──────────┘
-                            │
-                            ▼
-                 ┌─────────────────────┐
-                 │     Sequences       │
-                 └──────────┬──────────┘
-                            │
-                            ▼
-                 ┌─────────────────────┐
-                 │       Driver        │
-                 └──────────┬──────────┘
-                            │
-                            ▼
-                       ┌─────────┐
-                       │   DUT   │
-                       └────┬────┘
-                            │
-                            ▼
-                 ┌─────────────────────┐
-                 │      Monitor        │
-                 └──────────┬──────────┘
-                            │
-                 ┌──────────▼──────────┐
-                 │     Scoreboard      │
-                 │                     │
-                 │ Golden AES Model    │
-                 └─────────────────────┘
-```
+The environment includes a driver, monitor, scoreboard, and coverage components.
 
-The environment uses:
+## Self-Checking Scoreboard
 
-* Driver
-* Monitor
-* Scoreboard
-* Golden AES reference model
-* Functional coverage
-* Constrained-random sequences
-* Self-checking verification
+![Self-Checking Scoreboard](docs/images/self-checking-scoreboard.png)
 
----
+*Figure: Self-checking scoreboard and golden reference model.*
+
+The scoreboard uses a golden AES reference model for automatic result comparison and immediate mismatch detection.
 
 ## Verification Strategy
 
-The verification plan covers both functional correctness and security properties.
+The documented verification plan checks:
 
-### Functional Verification
-
-The design verifies that:
-
-* AES encryption matches NIST SP 800-38A F.5.1 vectors.
-* AES decryption matches NIST SP 800-38A F.5.2 vectors.
-* Encryption/decryption round-trip restores plaintext.
-* Key loading works correctly.
-* `keys_ready` timing is correct.
-* IV loading is correctly controlled.
-* Counter increments correctly.
-* Pipeline latency remains constant.
-
-### Security Verification
-
-The verification environment checks:
-
-* Nonce reuse detection.
-* Counter exhaustion warning.
-* Counter overflow handling.
-* Critical error recovery.
-* Keystream uniqueness across counters.
-* Key avalanche behavior.
-* IV avalanche behavior.
-* Plaintext bit propagation.
-* Absence of X/Z values on critical outputs.
-* Correct error-code generation.
-
----
-
-## Test Cases
-
-The presentation specifies the following verification objectives:
-
-| Test                   | Expected Behavior                   |
-| ---------------------- | ----------------------------------- |
-| NIST encryption vector | Matches F.5.1                       |
-| NIST decryption vector | Matches F.5.2                       |
-| Encrypt → decrypt      | Original plaintext recovered        |
-| Back-to-back blocks    | No output drops                     |
-| Blocked input          | No output stream leakage            |
-| `error_clear`          | Warning errors recover              |
-| Critical errors        | Full reset required                 |
-| Keystream uniqueness   | No repeated keystream blocks        |
-| Key bit flip           | Approximately 50% output-bit change |
-| IV bit flip            | Approximately 50% output-bit change |
-| Plaintext bit flip     | Exactly one output-bit change       |
-| X/Z checking           | No unknown critical outputs         |
-| IV reuse               | `ERR_NONCE_REUSE`                   |
-| Counter exhaustion     | Warning at `0xFFFFF000`             |
-| Counter overflow       | Critical halt at `0xFFFFFFFF`       |
-| Pipeline latency       | Constant 8 cycles                   |
-
----
+- NIST SP 800-38A F.5.1 encryption vectors.
+- NIST SP 800-38A F.5.2 decryption vectors.
+- Encryption/decryption round-trip correctness.
+- Key loading and `keys_ready` timing.
+- IV acceptance and session locking.
+- Nonce-reuse error generation.
+- Counter increment behavior.
+- Counter exhaustion at `0xFFFFF000`.
+- Counter overflow at `0xFFFFFFFF`.
+- Constant eight-cycle pipeline latency.
+- No output drops for back-to-back blocks.
+- No leakage while inputs are blocked.
+- Warning recovery through `error_clear`.
+- Full reset recovery for critical errors.
+- Keystream uniqueness.
+- Key and IV avalanche behavior.
+- Plaintext single-bit propagation.
+- No X/Z values on critical outputs.
+- Exact error-code classification.
 
 ## Verification Results
 
-The FPGA/system execution results reported in the presentation show:
+![Verification Results](docs/images/verification-results.png)
 
-| Metric                  |            Baremetal / JTAG | Linux / PetaLinux |
-| ----------------------- | --------------------------: | ----------------: |
-| Correctness             |                  5/5 PASSED |        5/5 PASSED |
-| Single-block latency    | 490 ns (49 cycles @ 99 MHz) |            530 ns |
-| Throughput, 1000 blocks |                     13 Mbps |       100.29 Mbps |
-| Blocks/sec              |                     103,412 |           783,479 |
-| Bitstream load time     |                         N/A |            133 ms |
+*Figure: Verification results reported in the presentation.*
+
+The presentation reports **5/5 NIST/FIPS correctness tests passed** for both baremetal/JTAG and Linux/PetaLinux execution.
 
 ---
 
@@ -740,119 +383,67 @@ The FPGA/system execution results reported in the presentation show:
 
 ## Target Platform
 
-The design was prototyped on the:
+**AMD Kria KV260** — ARM + FPGA SoC platform.
 
-**AMD Kria KV260**
+The FPGA prototype is used to validate RTL on real hardware, identify timing/integration issues, verify data transfer and interfaces, enable hardware/software co-design, and reduce risk before ASIC implementation.
 
-The KV260 is used as an ARM + FPGA SoC platform, enabling hardware/software co-design.
+## FPGA System Architecture
 
-The FPGA prototype was intended to:
+![FPGA System Architecture](docs/images/fpga-system-architecture.png)
 
-* Validate RTL on real hardware.
-* Identify timing and integration problems.
-* Validate high-speed data transfer.
-* Verify system interfaces.
-* Enable Linux-based control.
-* Reduce risk before ASIC physical implementation.
+*Figure: FPGA system architecture from the project presentation.*
 
----
+The documented system uses AXI Lite control, AXI Stream data, DMA transfer, and a Linux application. The implementation highlights include a custom AXI wrapper, three DMA engines, endian conversion, FIFO buffering, and Python/Linux control software.
 
-## Hardware/Software Co-Design
+## FPGA Resource Utilization
 
-The implemented FPGA system combines:
+| Resource | Utilized | Available | Utilization |
+|---|---:|---:|---:|
+| CLB LUTs | 13,546 | 117,120 | 11.57% |
+| CLB Registers | 8,782 | 234,240 | 3.75% |
+| Block RAM Tiles | 12 | 144 | 8.33% |
+| DSP Slices | 0 | 1,248 | 0.00% |
+| BUFGCE | 1 | 112 | 0.89% |
 
-```text
-             Linux Application
-                    │
-                    ▼
-              AXI Control
-                    │
-                    ▼
-        ┌───────────────────────┐
-        │      FPGA PL          │
-        │                       │
-        │ AES-CTR Accelerator   │
-        │ AXI Interface         │
-        │ FIFO                  │
-        │ DMA                   │
-        └───────────────────────┘
-                    ▲
-                    │
-                AXI Stream
-```
+## FPGA Results
 
-The presentation identifies:
+![FPGA Results](docs/images/fpga-results-1.png)
 
-* Custom AXI wrapper
-* Three DMA engines
-* Endian conversion
-* FIFO buffer
-* Python/Linux control software
+![FPGA Results — Timing and Performance](docs/images/fpga-results-2.png)
 
----
+*Figures: FPGA results and timing/performance data from the presentation.*
 
-# FPGA Resource Utilization
+### Post-Implementation Timing
 
-For the hardware/software co-design implementation:
+| Parameter | Result |
+|---|---:|
+| Implemented frequency | 100 MHz |
+| Clock period | 10.000 ns |
+| WNS | +3.362 ns |
+| WHS | +0.011 ns |
+| TNS | 0 ns |
+| Setup violations | 0 |
+| Hold violations | 0 |
+| Timing status | All constraints met |
 
-| FPGA Resource   | Utilized | Available | Utilization |
-| --------------- | -------: | --------: | ----------: |
-| CLB LUTs        |   13,546 |   117,120 |      11.57% |
-| CLB Registers   |    8,782 |   234,240 |       3.75% |
-| Block RAM Tiles |       12 |       144 |       8.33% |
-| DSP Slices      |        0 |     1,248 |       0.00% |
-| BUFGCE          |        1 |       112 |       0.89% |
+### Reported Performance
 
-No DSP slices are required by the implementation reported in the presentation.
+| Development Stage | Frequency | Throughput | Throughput |
+|---|---:|---:|---:|
+| OOC Core | 297.40 MHz | 38.07 Gbps | 4,759 MB/s |
+| Post-Synthesis Wrapper | 240.85 MHz | 30.83 Gbps | 3,853 MB/s |
+| Post-Implementation P&R | 179.86 MHz | 23.02 Gbps | 2,877 MB/s |
+| Active Operational Standard | 100.00 MHz | 12.80 Gbps | 1,600 MB/s |
 
----
+### KV260 Execution
 
-# FPGA Timing Results
-
-## Post-Implementation System Timing
-
-| Parameter             |              Result |
-| --------------------- | ------------------: |
-| Implemented frequency |             100 MHz |
-| Clock period          |           10.000 ns |
-| WNS                   |           +3.362 ns |
-| WHS                   |           +0.011 ns |
-| TNS                   |                0 ns |
-| Setup violations      |                   0 |
-| Hold violations       |                   0 |
-| Timing status         | All constraints met |
-
----
-
-## Standalone Core Performance
-
-The presentation reports:
-
-| Parameter                       |          Result |
-| ------------------------------- | --------------: |
-| Hardware platform frequency     |         100 MHz |
-| Standalone core frequency       |         250 MHz |
-| Minimum standalone clock period |            4 ns |
-| Pipeline depth                  |        5 stages |
-| Encryption latency              |  5 clock cycles |
-| Key expansion latency           | 44 clock cycles |
-| Encryption latency @ 100 MHz    |           50 ns |
-| Standalone throughput           |         32 Gbps |
-
----
-
-# CTR FPGA Performance
-
-The CTR implementation was evaluated at several development stages:
-
-| Development Stage           |  Frequency | Throughput | Throughput |
-| --------------------------- | ---------: | ---------: | ---------: |
-| OOC Core                    | 297.40 MHz | 38.07 Gbps | 4,759 MB/s |
-| Post-Synthesis Wrapper      | 240.85 MHz | 30.83 Gbps | 3,853 MB/s |
-| Post-Implementation P&R     | 179.86 MHz | 23.02 Gbps | 2,877 MB/s |
-| Active Operational Standard |    100 MHz | 12.80 Gbps | 1,600 MB/s |
-
-The post-implementation result represents the practical performance after physical implementation, while the 100 MHz configuration represents the active operational standard reported for the system.
+| Metric | Baremetal (JTAG) | Linux (PetaLinux) |
+|---|---:|---:|
+| Correctness | 5/5 PASSED | 5/5 PASSED |
+| Single-block latency | 490 ns (49 cycles @ 99 MHz) | 530 ns |
+| Throughput, 1000 blocks | 13 Mbps | 100.29 Mbps |
+| Blocks/sec | 103,412 | 783,479 |
+| Bitstream load time | N/A | 133 ms |
 
 ---
 
@@ -860,399 +451,217 @@ The post-implementation result represents the practical performance after physic
 
 ## Technology
 
-The ASIC implementation targets:
-
 **SkyWater 130 nm (SKY130)**
 
-The presentation uses an open-source physical implementation flow.
+## ASIC Design Flow
 
----
+![ASIC Design Flow](docs/images/asic-design-flow.png)
 
-# ASIC Flow
+*Figure: Open-source ASIC physical implementation flow from the presentation.*
 
-The documented ASIC flow includes:
+The documented flow uses:
 
-```text
-RTL
- │
- ▼
-Synthesis
- │
- ▼
-Floorplanning
- │
- ▼
-Placement
- │
- ▼
-Clock / Timing Optimization
- │
- ▼
-Routing
- │
- ▼
-Physical Verification
- │
- ├── DRC
- ├── LVS
- └── IR Drop
- │
- ▼
-Final Layout
-```
+- OpenROAD
+- LiberLane
+- SkyWater 130 nm PDK
+- Magic VLSI
+- Netgen
+- KLayout
 
----
+## ASIC Results
 
-# ASIC Tools
+![ASIC Results](docs/images/asic-results.png)
 
-The presentation identifies the following open-source tools/technologies:
+*Figure: ASIC timing, area, power, routing, and physical-verification results from the presentation.*
 
-* OpenROAD
-* LiberLane
-* SkyWater 130 nm PDK
-* Magic VLSI
-* Netgen
-* KLayout
+### Timing
 
----
-
-# ASIC Physical Implementation Results
-
-## Timing
-
-| Metric                           |   Result |
-| -------------------------------- | -------: |
-| Setup WNS — worst corner         | +2.20 ns |
-| Hold WNS — worst corner          | +0.30 ns |
-| Timing violations                |        0 |
-| PVT corners passed               |        9 |
+| Metric | Result |
+|---|---:|
+| Setup WNS — worst corner | +2.20 ns |
+| Hold WNS — worst corner | +0.30 ns |
+| Timing violations | 0 |
+| PVT corners passed | 9 |
 | Maximum frequency — worst corner | 43.9 MHz |
-| Maximum frequency — typical      | 86.4 MHz |
+| Maximum frequency — typical | 86.4 MHz |
 
----
+### Area
 
-## Area
+| Metric | Result |
+|---|---:|
+| Die size | 1897 × 1908 µm² |
+| Total die area | ≈ 3.62 mm² |
+| Standard cells | 147,966 |
+| Sequential cells | 4,739 |
+| Core utilization | 30.8% |
 
-| Metric           |          Result |
-| ---------------- | --------------: |
-| Die size         | 1897 × 1908 µm² |
-| Total die area   |      ≈ 3.62 mm² |
-| Standard cells   |         147,966 |
-| Sequential cells |           4,739 |
-| Core utilization |           30.8% |
+### Power
 
----
-
-## Power
-
-| Power Component |        Result |
-| --------------- | ------------: |
-| Internal power  |      77.85 mW |
-| Switching power |     125.69 mW |
-| Leakage power   |     0.0036 mW |
+| Metric | Result |
+|---|---:|
+| Internal power | 77.85 mW |
+| Switching power | 125.69 mW |
+| Leakage power | 0.0036 mW |
 | **Total power** | **203.54 mW** |
 
----
+### Routing & Physical Verification
 
-## Routing
+| Metric | Result |
+|---|---:|
+| Total wirelength | 6.13 m |
+| Total vias | 819,443 |
+| Unrouted nets | 0 |
+| DRC | Clean |
+| LVS | Clean |
+| IR drop | 3.42 mV (0.19% of VDD) |
 
-| Routing Metric   |  Result |
-| ---------------- | ------: |
-| Total wirelength |  6.13 m |
-| Total vias       | 819,443 |
-| Unrouted nets    |       0 |
+### ASIC Throughput
 
----
+| Condition | Throughput |
+|---|---:|
+| Worst case | 5.62 Gbps |
+| Typical | 11.06 Gbps |
 
-## Physical Verification
+## Final Layout
 
-| Verification            | Result  |
-| ----------------------- | ------- |
-| DRC                     | Clean   |
-| LVS                     | Clean   |
-| IR drop                 | 3.42 mV |
-| IR drop relative to VDD | 0.19%   |
+![Final ASIC Layout](docs/images/final-asic-layout.png)
 
----
+*Figure: Final ASIC physical layout from the presentation.*
 
-## ASIC Throughput
+## Final Layout 3D Model
 
-| Condition  | Throughput |
-| ---------- | ---------: |
-| Worst case |  5.62 Gbps |
-| Typical    | 11.06 Gbps |
+![Final ASIC Layout 3D Model](docs/images/final-asic-layout-3d.png)
+
+*Figure: Final ASIC layout 3D model from the presentation.*
 
 ---
 
 # Tools Used
 
-| Tool / Technology   | Role                                              |
-| ------------------- | ------------------------------------------------- |
-| Verilog RTL         | Hardware description                              |
-| UVM                 | Functional verification                           |
-| AMD Vivado          | FPGA synthesis, implementation and IP integration |
-| AMD Kria KV260      | FPGA/SoC prototype                                |
-| PetaLinux           | Linux FPGA software environment                   |
-| AXI                 | Hardware/software communication                   |
-| DMA                 | High-speed data transfer                          |
-| OpenROAD            | ASIC physical implementation                      |
-| LiberLane           | ASIC flow                                         |
-| SkyWater 130 nm PDK | ASIC technology                                   |
-| Magic VLSI          | Physical verification/layout                      |
-| Netgen              | LVS                                               |
-| KLayout             | Layout inspection/verification                    |
+| Tool / Technology | Role |
+|---|---|
+| Verilog RTL | Hardware description |
+| UVM | Functional verification |
+| AMD Vivado | FPGA synthesis, implementation and IP integration |
+| AMD Kria KV260 | FPGA/SoC prototype |
+| PetaLinux | Linux FPGA environment |
+| AXI | Hardware/software communication |
+| DMA | High-speed data transfer |
+| OpenROAD | ASIC physical implementation |
+| LiberLane | ASIC flow |
+| SkyWater 130 nm PDK | ASIC technology |
+| Magic VLSI | Physical verification/layout |
+| Netgen | LVS |
+| KLayout | Layout inspection/verification |
 
 ---
 
 # How To Run
 
-> **Important:** The presentation documents the architecture, tools, implementation flow, and measured results, but it does not provide the exact filenames, Makefiles, TCL scripts, simulator commands, or repository-specific build scripts. The commands below therefore describe the required flow rather than claiming exact project commands.
+> The presentation specifies the design flow and tools but does not provide the exact repository filenames, Makefiles, Tcl scripts, or simulator command lines. Therefore, the commands below describe the intended flow without inventing project-specific scripts.
 
 ## Simulation
 
-### 1. Compile the RTL
-
-Compile the AES-CTR RTL together with the verification environment and required packages.
-
-A typical simulator flow is:
-
 ```bash
-# Example flow — adapt paths to the repository structure
+# Compile RTL and UVM sources using the simulator configured for the project
 <simulator> -compile <rtl_sources> <uvm_sources>
-```
 
-### 2. Run the UVM testbench
-
-```bash
+# Run a selected UVM test
 <simulator> -run <test_name>
 ```
 
-### 3. Verify the results
+Verify NIST vectors, round-trip behavior, counter operation, security errors, and eight-cycle pipeline latency.
 
-The verification environment should check:
-
-```text
-NIST AES-CTR vectors
-        │
-        ├── Encryption
-        ├── Decryption
-        ├── Round-trip
-        ├── Counter operation
-        ├── Nonce reuse
-        ├── Counter exhaustion
-        ├── Counter overflow
-        └── Pipeline latency
-```
-
----
-
-# FPGA Implementation Steps
-
-The documented FPGA flow is:
+## FPGA Implementation
 
 ```text
 RTL
- │
- ▼
+ ↓
 Vivado Project
- │
- ▼
+ ↓
 Synthesis
- │
- ▼
+ ↓
 Implementation
- │
- ▼
+ ↓
 Timing Analysis
- │
- ▼
-Bitstream Generation
- │
- ▼
-KV260
- │
- ▼
-Linux / PetaLinux
- │
- ▼
-Application
+ ↓
+Bitstream
+ ↓
+Kria KV260
+ ↓
+Linux/PetaLinux Application
 ```
 
-Recommended execution sequence:
+Example entry point:
 
 ```bash
-# Create/open the Vivado project
 vivado
-
-# Synthesize the design
-# Run Synthesis from Vivado
-
-# Run implementation
-# Run Implementation from Vivado
-
-# Generate the bitstream
-# Generate Bitstream from Vivado
 ```
 
-The exact Tcl/project commands depend on the repository scripts and are not specified in the presentation.
+The exact Vivado project/Tcl commands depend on the repository implementation.
 
----
-
-# ASIC Flow Steps
-
-The ASIC flow follows the documented open-source physical implementation process:
+## ASIC Flow
 
 ```text
 RTL
- │
- ▼
+ ↓
 Synthesis
- │
- ▼
+ ↓
 OpenROAD
- │
- ▼
+ ↓
 Floorplan
- │
- ▼
+ ↓
 Placement
- │
- ▼
+ ↓
 Clock Tree
- │
- ▼
+ ↓
 Routing
- │
- ▼
-Timing Analysis
- │
- ▼
+ ↓
+Timing
+ ↓
 DRC / LVS / IR Drop
- │
- ▼
+ ↓
 Final Layout
 ```
 
-Typical flow stages:
-
-```bash
-# RTL synthesis
-<asic-synthesis-flow>
-
-# Physical implementation
-<openroad-flow>
-
-# DRC
-<magic-or-drc-flow>
-
-# LVS
-<netgen-flow>
-
-# Layout inspection
-<klayout-flow>
-```
-
-The exact scripts and command-line options should be taken from the repository's ASIC flow directory once the implementation scripts are included.
+The exact flow scripts and command-line arguments should be taken from the repository's ASIC implementation directory when those scripts are added.
 
 ---
 
 # Results Summary
 
-## FPGA vs ASIC
+| Metric | FPGA / KV260 | ASIC / SKY130 |
+|---|---:|---:|
+| Technology | AMD Kria KV260 | SkyWater 130 nm |
+| Main operating frequency | 100 MHz | 43.9 MHz worst case |
+| Maximum reported frequency | 297.40 MHz OOC | 86.4 MHz typical |
+| Throughput | 12.80 Gbps @ 100 MHz | 5.62 Gbps worst case |
+| Typical throughput | — | 11.06 Gbps |
+| Pipeline | 5 stages | 5-stage architecture |
+| CTR latency | 8 cycles | — |
+| ASIC total power | — | 203.54 mW |
+| ASIC area | — | ≈ 3.62 mm² |
+| FPGA LUTs | 13,546 | — |
+| FPGA registers | 8,782 | — |
+| FPGA BRAM | 12 tiles | — |
+| FPGA DSP | 0 | — |
+| ASIC sequential cells | — | 4,739 |
+| Timing violations | 0 | 0 |
+| ASIC DRC | — | Clean |
+| ASIC LVS | — | Clean |
+| ASIC unrouted nets | — | 0 |
 
-| Metric                     |                                          FPGA / KV260 |          ASIC / SKY130 |
-| -------------------------- | ----------------------------------------------------: | ---------------------: |
-| Technology                 |                                        AMD Kria KV260 |        SkyWater 130 nm |
-| Main operating frequency   |                                               100 MHz |    43.9 MHz worst case |
-| Maximum reported frequency |                                        297.40 MHz OOC |       86.4 MHz typical |
-| Throughput                 |                                  12.80 Gbps @ 100 MHz |   5.62 Gbps worst case |
-| Typical throughput         |                                                     — |             11.06 Gbps |
-| Pipeline                   |                                              5 stages |   5-stage architecture |
-| CTR latency                |                                              8 cycles |                      — |
-| Total power                | 1.000 W for reported LUT-based standalone comparison* |              203.54 mW |
-| Area                       |                                        FPGA resources |             ≈ 3.62 mm² |
-| LUTs                       |                          13,546 system implementation |                    N/A |
-| Registers                  |                           8,782 system implementation | 4,739 sequential cells |
-| BRAM                       |                                              12 tiles |                    N/A |
-| DSP                        |                                                     0 |                    N/A |
-| Timing violations          |                                                     0 |                      0 |
-| Physical verification      |                         FPGA implementation completed |  DRC clean / LVS clean |
-| Unrouted nets              |                                                     — |                      0 |
-
-*The **1.000 W** FPGA value belongs to the presentation's standalone LUT-based vs. GF S-Box comparison and should not be interpreted as the complete hardware/software co-design power figure.
-
----
-
-# Key Achievements
-
-The project demonstrates an end-to-end cryptographic hardware implementation covering:
-
-```text
-                AES Cryptography
-                       │
-                       ▼
-                RTL Architecture
-                       │
-                       ▼
-              Pipeline Optimization
-                       │
-                       ▼
-                UVM Verification
-                       │
-                       ▼
-               FPGA Prototyping
-                       │
-                       ▼
-            Hardware/Software Co-Design
-                       │
-                       ▼
-              ASIC Physical Design
-                       │
-                       ▼
-             SKY130 Final Layout
-```
-
-### Reported highlights
-
-* Five-stage pipelined AES architecture.
-* Dual-round implementation.
-* One-block-per-cycle pipeline architecture.
-* Eight-cycle CTR pipeline latency.
-* Pre-calculated key expansion.
-* Parameterized LUT/GF S-Box implementation.
-* Hardware nonce-reuse monitoring.
-* Counter exhaustion and overflow protection.
-* UVM self-checking verification environment.
-* NIST/FIPS test-vector verification.
-* AMD Kria KV260 FPGA prototype.
-* AXI-based hardware/software integration.
-* DMA-based FPGA data movement.
-* Linux/PetaLinux software control.
-* 297.40 MHz OOC FPGA frequency.
-* 23.02 Gbps post-implementation FPGA throughput.
-* 12.80 Gbps active 100 MHz operational throughput.
-* SkyWater 130 nm ASIC implementation.
-* 0 timing violations across 9 PVT corners.
-* DRC clean.
-* LVS clean.
-* 0 unrouted nets.
-* ≈3.62 mm² reported ASIC die area.
-* 203.54 mW reported ASIC total power.
-* 5.62 Gbps worst-case ASIC throughput.
+> **Power note:** The 1.00 W figure in the presentation belongs to the standalone LUT-based S-Box comparison, not the complete FPGA hardware/software co-design. The ASIC total power is reported separately as 203.54 mW.
 
 ---
 
 # References
 
-1. National Institute of Standards and Technology (NIST), **“Advanced Encryption Standard (AES),” FIPS 197**.
-
-2. National Institute of Standards and Technology (NIST), **“Recommendation for Block Cipher Modes of Operation: Methods and Techniques,” SP 800-38A**.
-
+1. National Institute of Standards and Technology (NIST), **Advanced Encryption Standard (AES), FIPS 197**.
+2. National Institute of Standards and Technology (NIST), **Recommendation for Block Cipher Modes of Operation: Methods and Techniques, SP 800-38A**.
 3. SkyWater Technology, **SkyWater 130 nm Process Design Kit (SKY130)**.
-
-4. AMD, **Kria KV260 Vision AI Starter Kit** — FPGA/SoC prototyping platform used for the hardware implementation.
-
-5. Universal Verification Methodology (UVM) — methodology used for the project's functional verification environment.
+4. AMD, **Kria KV260 Vision AI Starter Kit**.
+5. Universal Verification Methodology (UVM).
 
 ---
 
@@ -1262,12 +671,12 @@ The project demonstrates an end-to-end cryptographic hardware implementation cov
 
 **Presented by:**
 
-* Abanoub Sabry Abdel Sayed
-* Abdulrahman Mohamed Hamad
-* Ramadan Mohamed Sokkar
-* Omar Atef Abdul-Ghaffar
-* Farah Ahmed Bedear
-* Abdulrahman Ali Nasr
+- Abanoub Sabry Abdel Sayed
+- Abdulrahman Mohamed Hamad
+- Ramadan Mohamed Sokkar
+- Omar Atef Abdul-Ghaffar
+- Farah Ahmed Bedear
+- Abdulrahman Ali Nasr
 
 **Supervisor:**
 
@@ -1275,48 +684,12 @@ The project demonstrates an end-to-end cryptographic hardware implementation cov
 
 ---
 
-## Project Scope
-
-This project was developed as an end-to-end digital IC design effort covering:
-
-```text
-Digital IC Design
-       +
-Cryptographic Hardware
-       +
-RTL Development
-       +
-UVM Verification
-       +
-FPGA Prototyping
-       +
-Hardware/Software Co-Design
-       +
-ASIC Physical Implementation
-```
-
-The objective is to demonstrate the complete transition of a cryptographic hardware architecture from RTL to FPGA validation and finally to ASIC physical implementation.
-
----
-
 # License
 
-The project presentation does not specify a software or hardware license.
-
-Until a license is explicitly selected and added to the repository, the repository should be treated as **unlicensed / all rights reserved**.
-
-If this repository is intended for public reuse, a suitable license should be added explicitly through a `LICENSE` file.
+The supplied presentation does not specify a software or hardware license. Until a license is explicitly selected and added to the repository, the project should be treated as **unlicensed / all rights reserved**.
 
 ---
 
-## Disclaimer
+## Source Visuals
 
-All numerical implementation, timing, area, power, throughput, resource-utilization, and verification results in this README are taken from the supplied project presentation. Where the presentation does not specify an exact repository filename, directory, script, or command, this README intentionally does not claim that a particular implementation exists.
-
----
-
-## Project Status
-
-**Completed — FPGA prototype and ASIC physical implementation results documented.**
-
-The documented development flow progresses from the AES encryption core and pipeline optimization through AES-CTR integration, UVM verification, Kria KV260 FPGA implementation, and SkyWater 130 nm physical implementation.
+All figures included under `docs/images/` in this README package were rendered directly from the supplied `GP presentation_last0011.pptx`. They are not newly generated diagrams or approximations.
