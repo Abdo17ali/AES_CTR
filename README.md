@@ -369,13 +369,6 @@ The documented verification plan checks:
 - No X/Z values on critical outputs.
 - Exact error-code classification.
 
-## Verification Results
-
-![Verification Results](docs/images/verification-results.png)
-
-*Figure: Verification results reported in the presentation.*
-
-The presentation reports **5/5 NIST/FIPS correctness tests passed** for both baremetal/JTAG and Linux/PetaLinux execution.
 
 ---
 
@@ -663,33 +656,3 @@ The exact flow scripts and command-line arguments should be taken from the repos
 4. AMD, **Kria KV260 Vision AI Starter Kit**.
 5. Universal Verification Methodology (UVM).
 
----
-
-# Author & Contact
-
-## Digital IC Design Team — Obour Engineering
-
-**Presented by:**
-
-- Abanoub Sabry Abdel Sayed
-- Abdulrahman Mohamed Hamad
-- Ramadan Mohamed Sokkar
-- Omar Atef Abdul-Ghaffar
-- Farah Ahmed Bedear
-- Abdulrahman Ali Nasr
-
-**Supervisor:**
-
-**Assoc. Prof. Saad El-Sayed**
-
----
-
-# License
-
-The supplied presentation does not specify a software or hardware license. Until a license is explicitly selected and added to the repository, the project should be treated as **unlicensed / all rights reserved**.
-
----
-
-## Source Visuals
-
-All figures included under `docs/images/` in this README package were rendered directly from the supplied `GP presentation_last0011.pptx`. They are not newly generated diagrams or approximations.
