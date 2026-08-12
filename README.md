@@ -456,9 +456,6 @@ The documented flow uses:
 
 ---
 
-# How To Run
-
-> The presentation specifies the design flow and tools but does not provide the exact repository filenames, Makefiles, Tcl scripts, or simulator command lines. Therefore, the commands below describe the intended flow without inventing project-specific scripts.
 
 ## Simulation
 
@@ -550,8 +547,6 @@ The exact flow scripts and command-line arguments should be taken from the repos
 | ASIC DRC | — | Clean |
 | ASIC LVS | — | Clean |
 | ASIC unrouted nets | — | 0 |
-
-> **Power note:** The 1.00 W figure in the presentation belongs to the standalone LUT-based S-Box comparison, not the complete FPGA hardware/software co-design. The ASIC total power is reported separately as 203.54 mW.
 
 ---
 
