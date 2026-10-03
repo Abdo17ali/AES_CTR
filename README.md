@@ -1,15 +1,16 @@
-# End-to-End AES-128 CTR Cryptographic Processor — FPGA & ASIC
+# AES-128 CTR Cryptographic Engine with Hardware-Level Security Monitoring — FPGA & ASIC
 
 [![Language](https://img.shields.io/badge/HDL-Verilog-blue.svg)](#rtl-design)
 [![FPGA](https://img.shields.io/badge/FPGA-AMD%20Kria%20KV260-orange.svg)](#fpga-implementation)
 [![ASIC](https://img.shields.io/badge/ASIC-SKY130%20130nm-green.svg)](#asic-implementation)
 [![Verification](https://img.shields.io/badge/Verification-UVM-purple.svg)](#verification--simulation)
 [![Status](https://img.shields.io/badge/Status-Completed-success.svg)](#results-summary)
-[![License](https://img.shields.io/badge/License-Not%20Specified-lightgrey.svg)](#license)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Award](https://img.shields.io/badge/Award-Best%20Prototype%20Project%20%E2%80%93%20Egypt%20Semiconductor%20Challenge%202026-blueviolet.svg)](#recognition)
 
-> **End-to-End Design, Verification, and Hardware Implementation of an AES Cryptographic Processor Across FPGA and ASIC Platforms**
+> **A fully pipelined AES-128 CTR engine that enforces IV/counter protocol correctness directly in hardware — not in software — verified with UVM and carried through complete FPGA and open-source ASIC implementation.**
 
-A high-throughput, pipelined **AES-128 CTR-mode cryptographic processor** developed at RTL, verified using **UVM**, prototyped on the **AMD Kria KV260 FPGA**, and physically implemented using an open-source **SkyWater 130 nm ASIC flow**.
+Most AES-CTR hardware treats the initialization vector (IV) as a trusted input and leaves reuse prevention to software: a compromised driver or a bus-level replay can force IV reuse and silently break the cipher's confidentiality, with no hardware ever noticing. This project closes that gap. A **fixed-function hardware security monitor** sits in the RTL datapath itself, enforcing monotonic IV ordering and counter-overflow protection on every cycle, independent of whatever software is driving it. The design is verified through a **336-vector UVM environment with 100% functional coverage** (including a cross-coverage matrix proving no data pattern can mask a security fault), then carried through **dual physical implementation** — an **AMD Kria KV260 FPGA** prototype validated with a real-time video-encryption demo, and an **open-source SkyWater 130 nm ASIC flow** (LibreLane/OpenROAD) with full DRC/LVS sign-off.
 
 
 
@@ -17,6 +18,7 @@ A high-throughput, pipelined **AES-128 CTR-mode cryptographic processor** develo
 ## Table of Contents
 
 - [Overview](#overview)
+- [Recognition](#recognition)
 - [Architecture](#architecture)
 - [Features](#features)
 - [Project Structure](#project-structure)
@@ -80,6 +82,12 @@ Hardware AES provides dedicated cryptographic acceleration with deterministic pr
 
 ---
 
+# Recognition
+
+🏆 **Best Prototype Project — Egypt Semiconductor Challenge 2026**, sponsored by Etisal and SI-Vision Academy, after reaching the competition's Top 12.
+
+---
+
 # Architecture
 
 ## AES-CTR Architecture
@@ -140,12 +148,12 @@ The documented flow is:
 
 *Figure: Hardware security features documented in the presentation.*
 
-- Nonce reuse detection
+- Monotonic IV/nonce enforcement (every new IV must exceed the last loaded one, catching exact reuse, rollback, and replay)
 - Counter overflow detection
-- Counter exhaustion warning
+- Counter exhaustion early warning
 - Reset attack detection
-- Error classification
-- Warning and critical error handling
+- Six-code error classification with warning vs. critical severity
+- Warning errors recoverable via `error_clear`; critical errors require a full `rst_n` reset
 
 ### FPGA
 
